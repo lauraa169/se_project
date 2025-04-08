@@ -12,12 +12,24 @@ public class FileOutputStrategy implements OutputStrategy { // class names in Up
     private String baseDirectory; // field names in lowerCamelCase
 
     public final ConcurrentHashMap<String, String> fileMap = new ConcurrentHashMap<>();
-
+    /**
+     * * Constructor for FileOutputStrategy.
+     * Initializes the base directory for file output.
+     * @param baseDirectory
+     */
     public FileOutputStrategy(String baseDirectory) {
 
         this.baseDirectory = baseDirectory; // field names in lowerCamelCase
     }
-
+    /**
+     * * Outputs health data to a file.
+     * * @param patientId The ID of the patient.
+     * * @param timestamp The timestamp of the data.
+     * * @param label The label of the data (e.g., "ECG", "Blood Pressure").
+     * * @param data The actual data to be written to the file.
+     * * This method creates a directory for the specified label if it doesn't exist,
+     * * and appends the data to a file named after the label. The file is created
+     */
     @Override
     public void output(int patientId, long timestamp, String label, String data) {
         try {
