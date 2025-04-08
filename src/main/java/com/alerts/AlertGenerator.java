@@ -20,7 +20,7 @@ public class AlertGenerator {
      * @param dataStorage the data storage system that provides access to patient
      *                    data
      */
-    public AlertGenerator(DataStorage dataStorage) {
+    public AlertGenerator(DataStorage dataStorage) { 
         this.dataStorage = dataStorage;
     }
 
