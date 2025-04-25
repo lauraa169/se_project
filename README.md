@@ -69,5 +69,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 i6384339
 
 ## uml model diagrams
-uml model diagrams can be found at https://github.com/lauraa169/se_project/blob/master/uml_models/WEEK%202%20ASSIGNMENT.pdf
+uml model diagrams can be found [here](https://github.com/lauraa169/se_project/tree/master/uml_models)
 
