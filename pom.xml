@@ -19,21 +19,20 @@
     </properties>
 
     <dependencies>
+        <!-- JUnit Jupiter BOM: API + Engine -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.1</version> <!-- Use a consistent version -->
+            <scope>test</scope>
+        </dependency>
 
-        <!-- Java-WebSocket for WebSocket client -->
+        <!-- Java-WebSocket -->
         <dependency>
             <groupId>org.java-websocket</groupId>
             <artifactId>Java-WebSocket</artifactId>
             <version>1.5.2</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.10.1</version> <!-- You can use any recent stable version -->
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
     <build>
         <plugins>
@@ -49,7 +48,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.cardio_generator.HealthDataSimulator</mainClass>
+                            <mainClass>com.cardio_generator.Main</mainClass> <!-- HELP -->
                 </configuration>
             </plugin>
 
@@ -60,5 +59,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -1,8 +1,14 @@
 package com.cardio_generator.generators;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 import java.util.Random;
 
+import com.alerts.Alert;
 import com.cardio_generator.outputs.OutputStrategy;
+import com.data_management.Patient;
+import com.data_management.PatientRecord;
 
 public class AlertGenerator implements PatientDataGenerator {
 
@@ -36,6 +42,179 @@ public class AlertGenerator implements PatientDataGenerator {
         } catch (Exception e) {
             System.err.println("An error occurred while generating alert data for patient " + patientId);
             e.printStackTrace();
+        }
+    }
+    public void evaluateData(Patient patient, long startTime, long endTime) {
+        // retrieves all the records for the patient within the specified time range to be evaluated
+        List<PatientRecord> records = patient.getRecords(startTime, endTime); 
+        Queue<PatientRecord> BP = null; // stores queue of 3 previous blood pressure records
+        Queue<PatientRecord> BS = null; // stores queue previous blood saturation records
+        Queue<PatientRecord> ECG = null; // stores queue previous ECG records
+        List <Alert> alerts = new ArrayList<>(); // stores all alerts detected for the patient
+        boolean hypotensive = false ; // flag to check if the patient is hypotensive
+        boolean hypoxemic = false; // flag to check if the patient is hypoxemic
+
+        for (int i = 0; i < records.size(); i++) {
+        PatientRecord record = records.get(i);
+            // ALERT 1.1 FOR SYOSTOLIC BLOOD PRESSURE & ALERT 3.1 FOR HYPOTENSIVE HYPOXEMIA
+            if (record.getRecordType().equals("Systolic Blood Pressure")){
+                // check if the patient is hypotensive (systolic BP < 90 mmHg)
+                if (record.getMeasurementValue() < 90) {
+                    hypotensive = true;
+                } else {
+                    hypotensive = false;
+                }
+                // TREND ALERT
+                // check if the queue has less than 2 previous records
+                if (BP.size() != 2) {
+                    BP.add(record);
+                } else { // if there are two previous blood pressure records
+                    // convert the queue to a list for easier access
+                    List<PatientRecord> BPList = new ArrayList<>(BP);
+                    // check if there has been a consecutive change of BP of more than 10 mmHg over the last 3 records
+                    if (Math.abs(BPList.get(0).getMeasurementValue() - BPList.get(1).getMeasurementValue()) > 10
+                        && Math.abs(record.getMeasurementValue() - BPList.get(0).getMeasurementValue()) > 10) {
+                        // Output the alert
+                        System.out.println("Alert: Sudden change in blood pressure detected for patient " + patient.getPatientId());
+                        Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Sudden change in blood pressure detected", System.currentTimeMillis());
+                        alerts.add(alert);
+                    }
+                    // remove the oldest record from the queue
+                    BP.remove();
+                    // add the new record to the queue
+                    BP.add(record);
+                }
+                // CRITICAL TRESHOLD ALERT
+                if (record.getMeasurementValue() > 180 || record.getMeasurementValue() < 90) {
+                    // Output the alert
+                    System.out.println("Alert: Critical blood pressure level detected for patient " + patient.getPatientId());
+                    Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Critical blood pressure level detected", System.currentTimeMillis());
+                    alerts.add(alert);
+                }
+            // ALERT 1.2 FOR DIASTOLIC BLOOD PRESSURE
+            } else if (record.getRecordType().equals("Diastolic Blood Pressure")){
+                // TREND ALERT
+                // check if the queue has less than 2 previous records
+                if (BP.size() != 2) {
+                    BP.add(record);
+                } else { // if there are two previous blood pressure records
+                    // convert the queue to a list for easier access
+                    List<PatientRecord> BPList = new ArrayList<>(BP);
+                    // check if there has been a consecutive change of BP of more than 10 mmHg over the last 3 records
+                    if (Math.abs(BPList.get(0).getMeasurementValue() - BPList.get(1).getMeasurementValue()) > 10
+                        && Math.abs(record.getMeasurementValue() - BPList.get(0).getMeasurementValue()) > 10) {
+                        // Output the alert
+                        System.out.println("Alert: Sudden change in blood pressure detected for patient " + patient.getPatientId());
+                        Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Sudden change in blood pressure detected", System.currentTimeMillis());
+                        alerts.add(alert);
+                    }
+                    // remove the oldest record from the queue
+                    BP.remove();
+                    // add the new record to the queue
+                    BP.add(record);
+                }
+                // CRITICAL TRESHOLD ALERT
+                if (record.getMeasurementValue() > 120 || record.getMeasurementValue() < 60) {
+                    // Output the alert
+                    System.out.println("Alert: Critical blood pressure level detected for patient " + patient.getPatientId());
+                    Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Critical blood pressure level detected", System.currentTimeMillis());
+                    alerts.add(alert);
+                }
+            // ALERT 2 FOR BLOOD SATURATION & ALERT 3.2 FOR HYPOTENSIVE HYPOXEMIA
+            } else if (record.getRecordType().equals("Blood Saturation")){
+                // check if the patient is hypoxemic (blood saturation < 92%)
+                if (record.getMeasurementValue() < 92) {
+                    hypoxemic = true;
+                } else {
+                    hypoxemic = false;
+                }
+                // LOW SATURATION ALERT
+                if (record.getMeasurementValue() < 90) {
+                    // Output the alert
+                    System.out.println("Alert: Low blood saturation level detected for patient " + patient.getPatientId());
+                    Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Low blood saturation level detected", System.currentTimeMillis());
+                    alerts.add(alert);
+                }
+                // RAPID DROP ALERT
+                // if less than two previous records, add the current record to the queue
+                if (BS.size() < 2){
+                    BS.add(record);
+                } else{
+                    // convert queue to a list for easier access
+                    List<PatientRecord> BSList = new ArrayList<>(BS);
+                    long time = 0;
+                    double drop = 0;
+                    boolean timeExceeded = false;
+                    // check if there's a drop of 5% in blood saturation level within 10m
+                    for (int j = 0; j < BSList.size(); j++) {
+                        time += BSList.get(j).getTimestamp() - BSList.get(j+1).getTimestamp();
+                        if (time <= 10){
+                            drop += BSList.get(j).getMeasurementValue() - BSList.get(j+1).getMeasurementValue();
+                            if (drop <= -5){
+                                // Output the alert
+                                System.out.println("Alert: Rapid drop in blood saturation level detected for patient " + patient.getPatientId());
+                                Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Rapid drop in blood saturation level detected", System.currentTimeMillis());
+                                alerts.add(alert);
+                            }
+                            timeExceeded = true;
+                        }
+                    }
+                    if (timeExceeded){
+                        // remove the oldest record from the queue
+                        BS.remove();
+                    }
+                    // add the new record to the queue
+                    BS.add(record);
+                }
+                // ALERT 4 FOR ECG
+            } else if (record.getRecordType().equals("ECG")){
+                if (ECG.size() < 5){
+                    ECG.add(record);
+                } else{
+                    // convert queue to a list for easier access
+                    List<PatientRecord> ECGList = new ArrayList<>(ECG);
+                    double sum = 0;
+                    for (int j = 0; j < ECGList.size(); j++) {
+                        sum += ECGList.get(j).getMeasurementValue();
+                    }
+                    double average = sum / ECGList.size();
+                    // check if the current record is abnormal (more than 0.5 from the average of the last 5 records)
+                    if (Math.abs(record.getMeasurementValue()-average) > 0.5){
+                        // Output the alert
+                        System.out.println("Alert: Abnormal ECG detected for patient " + patient.getPatientId());
+                        Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Abnormal ECG detected", System.currentTimeMillis());
+                        alerts.add(alert);
+                    }
+                    // remove the oldest record from the queue
+                    ECG.remove();
+                    // add the new record to the queue 
+                    ECG.add(record);
+                }
+            } else if (record.getRecordType().equals("Button Pressed")){
+                // check if the button was pressed
+                if (record.getMeasurementValue() == 1) {
+                    // Output the alert
+                    System.out.println("Alert: Button pressed for patient " + patient.getPatientId());
+                    Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Button pressed", System.currentTimeMillis());
+                    alerts.add(alert);
+                }
+            } else {
+                System.out.println("Unknown record type: " + record.getRecordType());
+            }
+            // ALERT 3 FOR HYPOTENSIVE HYPOXEMIA
+            if (hypotensive && hypoxemic) {
+                // Output the alert
+                System.out.println("Alert: Hypotensive hypoxemia detected for patient " + patient.getPatientId());
+                Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Hypotensive hypoxemia detected", System.currentTimeMillis());
+                alerts.add(alert);
+            }
+            sendAlerts(alerts); // send the alerts to the output strategy
+        }
+    }
+    public static void sendAlerts(List<Alert> alerts) {
+        for (Alert alert : alerts) {
+            // Output the alert
+            // TODO: send them to AlertManager class to notify the staff
         }
     }
 }
