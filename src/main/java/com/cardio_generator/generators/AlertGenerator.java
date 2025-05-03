@@ -1,6 +1,7 @@
 package com.cardio_generator.generators;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Random;
@@ -44,18 +45,54 @@ public class AlertGenerator implements PatientDataGenerator {
             e.printStackTrace();
         }
     }
-    public void evaluateData(Patient patient, long startTime, long endTime) {
+    public List<Alert> evaluateData(Patient patient, long startTime, long endTime) {
         // retrieves all the records for the patient within the specified time range to be evaluated
         List<PatientRecord> records = patient.getRecords(startTime, endTime); 
-        Queue<PatientRecord> BP = null; // stores queue of 3 previous blood pressure records
-        Queue<PatientRecord> BS = null; // stores queue previous blood saturation records
-        Queue<PatientRecord> ECG = null; // stores queue previous ECG records
+        Queue<PatientRecord> BP = new LinkedList<>();// stores queue of 3 previous blood pressure records
+        Queue<PatientRecord> BS = new LinkedList<>(); // stores queue previous blood saturation records
+        Queue<PatientRecord> ECG = new LinkedList<>();// stores queue previous ECG records
+
         List <Alert> alerts = new ArrayList<>(); // stores all alerts detected for the patient
         boolean hypotensive = false ; // flag to check if the patient is hypotensive
         boolean hypoxemic = false; // flag to check if the patient is hypoxemic
 
         for (int i = 0; i < records.size(); i++) {
         PatientRecord record = records.get(i);
+            
+            // TREND ALERT 
+            // check if the record is a blood pressure record (diastolic or systolic)
+            if (record.getRecordType().equals("Systolic Blood Pressure") || 
+                record.getRecordType().equals("Diastolic Blood Pressure")) {
+    
+                // use same queue for both systolic and diastolic
+                if (BP.size() < 2) {
+                    BP.add(record);
+                } else {
+                    List<PatientRecord> BPList = new ArrayList<>(BP);
+    
+                    double val1 = BPList.get(0).getMeasurementValue();
+                    double val2 = BPList.get(1).getMeasurementValue();
+                    double val3 = record.getMeasurementValue();
+    
+                    double delta1 = val2 - val1;
+                    double delta2 = val3 - val2;
+                    
+    
+                    // check if all changes are > 10 mmHg and in same direction
+                    if (Math.abs(delta1) > 10 && Math.abs(delta2) > 10 &&
+                        ((delta1 > 0 && delta2 > 0) || (delta1 < 0 && delta2 < 0))) {
+    
+                        System.out.println("Alert: BP trend detected for patient " + patient.getPatientId());
+                        Alert alert = new Alert(String.valueOf(patient.getPatientId()), 
+                            "Sudden change in blood pressure detected", System.currentTimeMillis());
+                        alerts.add(alert);
+                    }
+    
+                    // Update queue
+                    BP.remove();
+                    BP.add(record);
+                }
+            }
             // ALERT 1.1 FOR SYOSTOLIC BLOOD PRESSURE & ALERT 3.1 FOR HYPOTENSIVE HYPOXEMIA
             if (record.getRecordType().equals("Systolic Blood Pressure")){
                 // check if the patient is hypotensive (systolic BP < 90 mmHg)
@@ -63,26 +100,6 @@ public class AlertGenerator implements PatientDataGenerator {
                     hypotensive = true;
                 } else {
                     hypotensive = false;
-                }
-                // TREND ALERT
-                // check if the queue has less than 2 previous records
-                if (BP.size() != 2) {
-                    BP.add(record);
-                } else { // if there are two previous blood pressure records
-                    // convert the queue to a list for easier access
-                    List<PatientRecord> BPList = new ArrayList<>(BP);
-                    // check if there has been a consecutive change of BP of more than 10 mmHg over the last 3 records
-                    if (Math.abs(BPList.get(0).getMeasurementValue() - BPList.get(1).getMeasurementValue()) > 10
-                        && Math.abs(record.getMeasurementValue() - BPList.get(0).getMeasurementValue()) > 10) {
-                        // Output the alert
-                        System.out.println("Alert: Sudden change in blood pressure detected for patient " + patient.getPatientId());
-                        Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Sudden change in blood pressure detected", System.currentTimeMillis());
-                        alerts.add(alert);
-                    }
-                    // remove the oldest record from the queue
-                    BP.remove();
-                    // add the new record to the queue
-                    BP.add(record);
                 }
                 // CRITICAL TRESHOLD ALERT
                 if (record.getMeasurementValue() > 180 || record.getMeasurementValue() < 90) {
@@ -93,26 +110,6 @@ public class AlertGenerator implements PatientDataGenerator {
                 }
             // ALERT 1.2 FOR DIASTOLIC BLOOD PRESSURE
             } else if (record.getRecordType().equals("Diastolic Blood Pressure")){
-                // TREND ALERT
-                // check if the queue has less than 2 previous records
-                if (BP.size() != 2) {
-                    BP.add(record);
-                } else { // if there are two previous blood pressure records
-                    // convert the queue to a list for easier access
-                    List<PatientRecord> BPList = new ArrayList<>(BP);
-                    // check if there has been a consecutive change of BP of more than 10 mmHg over the last 3 records
-                    if (Math.abs(BPList.get(0).getMeasurementValue() - BPList.get(1).getMeasurementValue()) > 10
-                        && Math.abs(record.getMeasurementValue() - BPList.get(0).getMeasurementValue()) > 10) {
-                        // Output the alert
-                        System.out.println("Alert: Sudden change in blood pressure detected for patient " + patient.getPatientId());
-                        Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Sudden change in blood pressure detected", System.currentTimeMillis());
-                        alerts.add(alert);
-                    }
-                    // remove the oldest record from the queue
-                    BP.remove();
-                    // add the new record to the queue
-                    BP.add(record);
-                }
                 // CRITICAL TRESHOLD ALERT
                 if (record.getMeasurementValue() > 120 || record.getMeasurementValue() < 60) {
                     // Output the alert
@@ -146,9 +143,9 @@ public class AlertGenerator implements PatientDataGenerator {
                     double drop = 0;
                     boolean timeExceeded = false;
                     // check if there's a drop of 5% in blood saturation level within 10m
-                    for (int j = 0; j < BSList.size(); j++) {
+                    for (int j = 0; j < BSList.size()-1; j++) {
                         time += BSList.get(j).getTimestamp() - BSList.get(j+1).getTimestamp();
-                        if (time <= 10){
+                        if (time <= 600000) { // 10 minutes in milliseconds
                             drop += BSList.get(j).getMeasurementValue() - BSList.get(j+1).getMeasurementValue();
                             if (drop <= -5){
                                 // Output the alert
@@ -190,6 +187,8 @@ public class AlertGenerator implements PatientDataGenerator {
                     // add the new record to the queue 
                     ECG.add(record);
                 }
+            // ALERT 5 FOR BUTTON PRESSED
+            // check if the record is a button pressed record
             } else if (record.getRecordType().equals("Button Pressed")){
                 // check if the button was pressed
                 if (record.getMeasurementValue() == 1) {
@@ -208,8 +207,10 @@ public class AlertGenerator implements PatientDataGenerator {
                 Alert alert = new Alert(String.valueOf(patient.getPatientId()), "Hypotensive hypoxemia detected", System.currentTimeMillis());
                 alerts.add(alert);
             }
-            sendAlerts(alerts); // send the alerts to the output strategy
+           //sendAlerts(alerts); // send the alerts to the output strategy
+           
         }
+        return alerts; // return the list of alerts generated for the patient
     }
     public static void sendAlerts(List<Alert> alerts) {
         for (Alert alert : alerts) {

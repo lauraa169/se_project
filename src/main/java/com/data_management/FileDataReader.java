@@ -33,7 +33,7 @@ public class FileDataReader implements DataReader {
         // This is a placeholder implementation.
         System.out.println("Processing file: " + file.toString());
         // reads file line by line and parses it into PatientRecord objects
-        try (BufferedReader br = Files.newBufferedReader(filePath)) {
+        try (BufferedReader br = Files.newBufferedReader(file)) {
             String line;
             while ((line = br.readLine()) != null) {
                 PatientRecord record = parseLineToRecord(line);

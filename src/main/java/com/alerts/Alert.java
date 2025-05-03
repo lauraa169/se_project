@@ -5,6 +5,7 @@ public class Alert {
     private String patientId;
     private String condition;
     private long timestamp;
+    private String message;
 
     public Alert(String patientId, String condition, long timestamp) {
         this.patientId = patientId;
