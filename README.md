@@ -68,4 +68,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## studentID
 i6384339
 
+## uml model diagrams
+uml model diagrams can be found [here](https://github.com/lauraa169/se_project/tree/master/uml_models)
 
