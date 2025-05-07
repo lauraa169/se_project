@@ -28,7 +28,7 @@ class FileDataReaderTest {
                 "2,120.5,Systolic Blood Pressure,1714376789051"
         );
         Files.write(tempFile, lines);
-        storage = new DataStorage();
+        storage = DataStorage.getInstance();
         reader = new FileDataReader(tempFile.toString());
     }
 

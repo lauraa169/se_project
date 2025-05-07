@@ -35,24 +35,36 @@ import java.util.ArrayList;
 
 public class HealthDataSimulator {
 
-    private static int patientCount = 50; // Default number of patients
+    private static HealthDataSimulator instance;
+
+    private static int patientCount = 50;
     private static ScheduledExecutorService scheduler;
-    private static OutputStrategy outputStrategy = new ConsoleOutputStrategy(); // Default output strategy
+    private static OutputStrategy outputStrategy = new ConsoleOutputStrategy();
     private static final Random random = new Random();
 
-    /**
-     * The main method initializes the simulator, parses command-line
-     * arguments, and schedules tasks for generating health data for patients.
-     */
+    // constructor
+    private HealthDataSimulator() {}
+
+    // singleton method
+    public static synchronized HealthDataSimulator getInstance() {
+        if (instance == null) {
+            instance = new HealthDataSimulator();
+        }
+        return instance;
+    }
+
+
     public static void main(String[] args) throws IOException {
+        HealthDataSimulator simulator = HealthDataSimulator.getInstance();
+        simulator.run(args);
+    }
 
+
+    public void run(String[] args) throws IOException {
         parseArguments(args);
-
         scheduler = Executors.newScheduledThreadPool(patientCount * 4);
-
         List<Integer> patientIds = initializePatientIds(patientCount);
-        Collections.shuffle(patientIds); // Randomize the order of patient IDs
-
+        Collections.shuffle(patientIds);
         scheduleTasksForPatients(patientIds);
     }
     /**
