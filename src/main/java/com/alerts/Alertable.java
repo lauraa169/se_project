@@ -1,7 +1,7 @@
 package com.alerts;
 
 public interface Alertable {
-    String patientId = "";
-    String condition = "";
-    long timestamp = 0;
+    String getPatientId();
+    String getCondition();
+    long getTimestamp();
 }

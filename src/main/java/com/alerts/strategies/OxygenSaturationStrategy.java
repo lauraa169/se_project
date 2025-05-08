@@ -16,7 +16,7 @@ public class OxygenSaturationStrategy implements AlertStrategy {
     public Alert checkAlert(PatientRecord record){
         if (record.getMeasurementValue() < 90) {
             // Output the alert
-            System.out.println("Alert: Low blood saturation level detected for patient " + patient.getPatientId());
+            System.out.println("Alert: Low blood saturation level detected for patient " + record.getPatientId());
             BloodOxygenAlert alert = new BloodOxygenAlert(String.valueOf(record.getPatientId()), "Low blood saturation level detected", System.currentTimeMillis());
             return alert;
         }
@@ -37,7 +37,7 @@ public class OxygenSaturationStrategy implements AlertStrategy {
                     drop += BSList.get(j).getMeasurementValue() - BSList.get(j+1).getMeasurementValue();
                     if (drop <= -5){
                         // Output the alert
-                        System.out.println("Alert: Rapid drop in blood saturation level detected for patient " + patient.getPatientId());
+                        System.out.println("Alert: Rapid drop in blood saturation level detected for patient " + record.getPatientId());
                         BloodOxygenAlert alert = new BloodOxygenAlert(String.valueOf(record.getPatientId()), "Rapid drop in blood saturation level detected", System.currentTimeMillis());
                         return alert;
                     }

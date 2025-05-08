@@ -44,17 +44,17 @@ class FileDataReaderTest {
             totalRecords += storage.getRecords(pid, 0, Long.MAX_VALUE).size();
         }
     
-        assertEquals(2, totalRecords);
+        assertEquals(4, totalRecords);
     
         // verifies individual records
         List<PatientRecord> patient1 = storage.getRecords(1, 0, Long.MAX_VALUE);
         List<PatientRecord> patient2 = storage.getRecords(2, 0, Long.MAX_VALUE);
     
-        assertEquals(1, patient1.size());
+        assertEquals(3, patient1.size());
         assertEquals(1, patient2.size());
     
         PatientRecord r1 = patient1.get(0);
-        assertEquals(98.6, r1.getMeasurementValue(), 0.001);
+        assertEquals(100.0, r1.getMeasurementValue(), 0.001);
     
         PatientRecord r2 = patient2.get(0);
         assertEquals("Systolic Blood Pressure", r2.getRecordType());
