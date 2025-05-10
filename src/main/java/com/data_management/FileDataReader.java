@@ -7,14 +7,14 @@ import javax.xml.crypto.Data;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
-public class FileDataReader implements DataReader {
+public class FileDataReader {
     private Path filePath;
 
     public FileDataReader(String filePath) {
         this.filePath = Paths.get(filePath);
     }
 
-    @Override
+
     public void readData(DataStorage dataStorage) throws IOException {
         // Implement the logic to read data from the file at filePath
         // and store it in the dataStorage.

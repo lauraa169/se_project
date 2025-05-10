@@ -2,11 +2,17 @@ package com.data_management;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.alerts.AlertGenerator;
+import com.cardio_generator.outputs.WebSocketOutputStrategy;
 
 /**
  * Manages storage and retrieval of patient data within a healthcare monitoring
@@ -24,7 +30,8 @@ public class DataStorage {
      * structure.
      */
     private DataStorage() {
-        this.patientMap = new HashMap<>();
+        this.patientMap = new ConcurrentHashMap<Integer, Patient>(){
+        };
     }
     // singleton method
     public static DataStorage getInstance() {
@@ -93,15 +100,20 @@ public class DataStorage {
      * 
      * @param args command line arguments
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args){
         // DataReader is not defined in this scope, should be initialized appropriately.
         // DataReader reader = new SomeDataReaderImplementation("path/to/data");
         DataStorage storage = new DataStorage();
+        URI uri = URI.create("ws://localhost:8080");
+        // initialize server
+        WebSocketOutputStrategy strategy = new WebSocketOutputStrategy(8080);
 
         // Assuming the reader has been properly initialized and can read data into the
-        // storage
-        FileDataReader reader = new FileDataReader("filepath");
-        reader.readData(storage);
+        // initialize client
+        MyWebSocketClient client = new MyWebSocketClient(uri, storage);
+        // connect client to server
+        client.connect(storage);
+
 
         // Example of using DataStorage to retrieve and print records for a patient
         List<PatientRecord> records = storage.getRecords(1, 1700000000000L, 1800000000000L);
